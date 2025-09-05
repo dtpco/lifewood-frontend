@@ -273,26 +273,26 @@ export default function SignIn() {
                             </Typography>
                         </Divider>
 
-                        <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                Don't have an account?
-                            </Typography>
-                            <Link
-                                component={RouterLink}
-                                to="/signup" // This route doesn't exist yet, but kept for completeness
-                                sx={{
-                                    color: 'secondary.main',
-                                    textDecoration: 'none',
-                                    fontWeight: 'bold',
-                                    fontSize: '1.1rem',
-                                    '&:hover': {
-                                        textDecoration: 'underline'
-                                    }
-                                }}
-                            >
-                                Create Account
-                            </Link>
-                        </Box>
+                        {/*<Box sx={{ textAlign: 'center' }}>*/}
+                        {/*    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>*/}
+                        {/*        Don't have an account?*/}
+                        {/*    </Typography>*/}
+                        {/*    <Link*/}
+                        {/*        component={RouterLink}*/}
+                        {/*        to="/signup" // This route doesn't exist yet, but kept for completeness*/}
+                        {/*        sx={{*/}
+                        {/*            color: 'secondary.main',*/}
+                        {/*            textDecoration: 'none',*/}
+                        {/*            fontWeight: 'bold',*/}
+                        {/*            fontSize: '1.1rem',*/}
+                        {/*            '&:hover': {*/}
+                        {/*                textDecoration: 'underline'*/}
+                        {/*            }*/}
+                        {/*        }}*/}
+                        {/*    >*/}
+                        {/*        Create Account*/}
+                        {/*    </Link>*/}
+                        {/*</Box>*/}
                     </Box>
                 </Paper>
             </Container>
