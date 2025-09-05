@@ -82,7 +82,8 @@ function ApplicationForm() {
         console.log('Form Data Submitted:', formData);
         try {
             // Replace with your actual backend API endpoint
-            const response = await fetch('/api/applications', {
+            // Make sure your backend is running on http://localhost:5000
+            const response = await fetch('http://localhost:5000/api/applications', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -103,12 +104,50 @@ function ApplicationForm() {
                 });
                 setFormErrors({});
             } else {
+                let errorMessage = 'An error occurred during submission.';
+
+                try {
+                    const errorData = await response.json();
+
+                    // Check if it's a duplicate email error
+                    if (errorData.message && errorData.message.includes('email already exists')) {
+                        // For duplicate email, show success message since we want to allow multiple applications
+                        setSubmissionStatus('success');
+                        setFormData({
+                            firstName: '',
+                            lastName: '',
+                            age: '',
+                            degree: '',
+                            relevantExperience: '',
+                            email: '',
+                            projectAppliedFor: '',
+                        });
+                        setFormErrors({});
+                        return;
+                    } else {
+                        errorMessage = errorData.message || 'Server error during application submission.';
+                    }
+                } catch (parseError) {
+                    // If response is not JSON, use status-based error message
+                    if (response.status === 500) {
+                        errorMessage = 'Internal server error. Please try again later.';
+                    } else if (response.status === 404) {
+                        errorMessage = 'Service not found. Please contact support.';
+                    } else {
+                        errorMessage = `Server error (${response.status}). Please try again.`;
+                    }
+                }
+
                 setSubmissionStatus('error');
-                console.error('Submission failed:', response.statusText);
+                console.error('Submission failed:', errorMessage);
             }
         } catch (error) {
             setSubmissionStatus('error');
             console.error('Error submitting form:', error);
+            // Network error or other issues
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                console.error('Network error: Unable to connect to server');
+            }
         }
     };
 
@@ -124,12 +163,12 @@ function ApplicationForm() {
 
                 {submissionStatus === 'success' && (
                     <Alert severity="success" sx={{ mb: 2 }}>
-                        Application submitted successfully!
+                        Application submitted successfully! You can apply for multiple projects with the same email.
                     </Alert>
                 )}
                 {submissionStatus === 'error' && (
                     <Alert severity="error" sx={{ mb: 2 }}>
-                        There was an error submitting your application. Please check your input and try again.
+                        There was an error submitting your application. Please check that the server is running and try again.
                     </Alert>
                 )}
 

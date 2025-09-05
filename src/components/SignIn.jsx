@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -9,18 +9,29 @@ import {
     Link,
     Divider,
     InputAdornment,
-    IconButton
+    IconButton,
+    Alert // Added for login feedback
 } from '@mui/material';
-import { Visibility, VisibilityOff, Email, Lock, Close } from '@mui/icons-material';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Visibility, VisibilityOff, AccountCircle, Lock, Close } from '@mui/icons-material'; // Changed Email to AccountCircle
+import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 
 export default function SignIn() {
     const [formData, setFormData] = useState({
-        email: '',
+        username: '', // Changed from email to username
         password: ''
     });
     const [showPassword, setShowPassword] = useState(false);
+    const [loginError, setLoginError] = useState(''); // State for login errors
+    const [isFromLogout, setIsFromLogout] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        // Check if user came from logout
+        if (location.state?.fromLogout) {
+            setIsFromLogout(true);
+        }
+    }, [location]);
 
     const handleChange = (e) => {
         setFormData({
@@ -29,10 +40,38 @@ export default function SignIn() {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle sign in logic here
-        console.log('Sign in data:', formData);
+        setLoginError(''); // Clear previous errors
+
+        try {
+            const response = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: formData.username === 'admin' ? 'deitytee@gmail.com' : formData.username, // Use admin's email if username is 'admin', otherwise assume it's an email for other users if you expand later
+                    password: formData.password
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Store token and user info (e.g., in localStorage)
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                console.log('Login successful:', data.message);
+                navigate('/admin' ); // Redirect to AdminDashboard
+            } else {
+                setLoginError(data.message || 'Login failed. Please check your credentials.');
+                console.error('Login failed:', data.message);
+            }
+        } catch (error) {
+            setLoginError('Network error. Unable to connect to the server.');
+            console.error('Error during login:', error);
+        }
     };
 
     const handleClickShowPassword = () => {
@@ -40,7 +79,11 @@ export default function SignIn() {
     };
 
     const handleBackClick = () => {
-        navigate(-1); // Go back to previous page
+        if (isFromLogout) {
+            navigate('/'); // Go to home page if came from logout
+        } else {
+            navigate(-1); // Go back to previous page
+        }
     };
 
     return (
@@ -133,21 +176,26 @@ export default function SignIn() {
                         </Typography>
                     </Box>
 
+                    {loginError && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                            {loginError}
+                        </Alert>
+                    )}
+
                     {/* Sign In Form */}
                     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
                         <TextField
                             fullWidth
                             required
-                            name="email"
-                            type="email"
-                            label="Email Address"
-                            value={formData.email}
+                            name="username" // Changed name to username
+                            label="Username" // Changed label to Username
+                            value={formData.username}
                             onChange={handleChange}
                             sx={{ mb: 3 }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
-                                        <Email color="primary" />
+                                        <AccountCircle color="primary" /> {/* Changed icon */}
                                     </InputAdornment>
                                 ),
                             }}
@@ -206,7 +254,7 @@ export default function SignIn() {
                         <Box sx={{ textAlign: 'center', mb: 2 }}>
                             <Link
                                 component={RouterLink}
-                                to="/forgot-password"
+                                to="/forgot-password" // This route doesn't exist yet, but kept for completeness
                                 sx={{
                                     color: 'primary.main',
                                     textDecoration: 'none',
@@ -231,7 +279,7 @@ export default function SignIn() {
                             </Typography>
                             <Link
                                 component={RouterLink}
-                                to="/signup"
+                                to="/signup" // This route doesn't exist yet, but kept for completeness
                                 sx={{
                                     color: 'secondary.main',
                                     textDecoration: 'none',

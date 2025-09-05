@@ -390,7 +390,7 @@ export default function Home() {
                                 fontSize: { xs: '2rem', md: '3rem' }
                             }}
                         >
-                            Genealogy
+                            Data Curation and Validation
                         </Typography>
                     </Box>
 
@@ -458,9 +458,8 @@ export default function Home() {
                         justifyContent: 'center',
                         p: 2,
                         position: 'relative',
-                        zIndex: 1,
-                        bgcolor: 'white',
-                        backdropFilter: 'blur(1px)'
+                        zIndex: 1
+                        // Removed bgcolor and backdropFilter
                     }}>
                         <img
                             ref={genealogyImageRef}
@@ -473,8 +472,8 @@ export default function Home() {
                                 objectFit: 'cover',
                                 borderRadius: '8px',
                                 boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-                                cursor: 'pointer',
-                                backgroundColor: 'white'
+                                cursor: 'pointer'
+                                // Removed backgroundColor: 'white'
                             }}
                         />
                     </Box>

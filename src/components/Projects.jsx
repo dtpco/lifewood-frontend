@@ -9,40 +9,58 @@ gsap.registerPlugin(ScrollTrigger);
 
 const projectsData = [
     {
+        id: "ai-data-extraction",
         name: "AI Data Extraction",
-        description: "Develop and implement advanced AI models for efficient and accurate data extraction from various sources, enhancing data processing capabilities."
+        description: "Develop and implement advanced AI models for efficient and accurate data extraction from various sources, enhancing data processing capabilities.",
+        image: "public/AI-Data-Extraction.jpg"
     },
     {
+        id: "machine-learning-enablement",
         name: "Machine Learning Enablement",
-        description: "Contribute to building and optimizing machine learning pipelines and applications, facilitating data-driven decision-making."
+        description: "Contribute to building and optimizing machine learning pipelines and applications, facilitating data-driven decision-making.",
+        image: "/public/Machine Learning Enablement.jpg"
     },
     {
+        id: "genealogy",
         name: "Genealogy",
-        description: "Work on projects that leverage AI to analyze and interpret genealogical data, helping users uncover family histories and connections."
+        description: "Work on projects that leverage AI to analyze and interpret genealogical data, helping users uncover family histories and connections.",
+        image: "/public/Genealogyyy.jpg"
     },
     {
+        id: "natural-language-processing",
         name: "Natural Language Processing",
-        description: "Engage in developing NLP solutions for text analysis, sentiment analysis, language translation, and conversational AI interfaces."
+        description: "Engage in developing NLP solutions for text analysis, sentiment analysis, language translation, and conversational AI interfaces.",
+        image: "/public/Natural-Language-Processing.jpg"
     },
     {
+        id: "ai-enabled-customer-service",
         name: "AI-Enabled Customer Service",
-        description: "Design and implement AI solutions to improve customer service interactions, including chatbots, virtual assistants, and automated support systems."
+        description: "Design and implement AI solutions to improve customer service interactions, including chatbots and automated support systems.",
+        image: "/public/AI-Enabled-Customer-Services.jpg"
     },
     {
+        id: "computer-vision",
         name: "Computer Vision",
-        description: "Participate in developing computer vision applications for image recognition, object detection, video analysis, and other visual AI tasks."
+        description: "Participate in developing computer vision applications for image recognition, object detection, video analysis, and other visual AI tasks.",
+        image: "/public/Computer Vision.jpg"
     },
     {
+        id: "autonomous-driving-technology",
         name: "Autonomous Driving Technology",
-        description: "Contribute to cutting-edge projects focused on AI algorithms for autonomous vehicles, including perception, path planning, and decision-making."
+        description: "Contribute to cutting-edge projects focused on AI algorithms for autonomous vehicles, including perception and decision-making.",
+        image: "/public/Autonomous-Driving-Technology.jpg"
     },
     {
+        id: "coming-soon-1",
         name: "Coming Soon",
-        description: "New exciting projects are in development. Stay tuned for more innovative AI solutions and opportunities."
+        description: "New exciting projects are in development. Stay tuned for more innovative AI solutions and opportunities.",
+        image: "/public/dreamina-2025-09-02-8766-modern,technology, data, future of AI, g....jpeg"
     },
     {
+        id: "coming-soon-2",
         name: "Coming Soon",
-        description: "More groundbreaking projects will be announced soon. Join us to be part of the next wave of AI innovation."
+        description: "More groundbreaking projects will be announced soon. Join us to be part of the next wave of AI innovation.",
+        image: "public/dreamina-2025-09-02-8766-modern,technology, data, future of AI, g....jpeg"
     },
 ];
 
@@ -124,7 +142,7 @@ function Projects() {
             >
                 {projectsData.map((project, index) => (
                     <Box
-                        key={index}
+                        key={project.id}
                         sx={{
                             aspectRatio: '1/1',
                             '@media (max-width: 768px)': {
@@ -132,7 +150,11 @@ function Projects() {
                             }
                         }}
                     >
-                        <ProjectCard project={project.name} description={project.description} />
+                        <ProjectCard
+                            project={project.name}
+                            description={project.description}
+                            image={project.image}
+                        />
                     </Box>
                 ))}
             </Box>
