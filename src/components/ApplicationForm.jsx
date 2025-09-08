@@ -14,6 +14,8 @@ import {
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 const projects = [
     { id: 'ai-data-extraction', name: 'AI Data Extraction' },
     { id: 'machine-learning-enablement', name: 'Machine Learning Enablement' },
@@ -78,16 +80,10 @@ function ApplicationForm() {
             return;
         }
 
-        // Simulate API call to backend
-        console.log('Form Data Submitted:', formData);
         try {
-            // Replace with your actual backend API endpoint
-            // Make sure your backend is running on http://localhost:5000
-            const response = await fetch('http://localhost:5000/api/applications', {
+            const response = await fetch(`${API_BASE}/api/applications`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
 
@@ -105,13 +101,9 @@ function ApplicationForm() {
                 setFormErrors({});
             } else {
                 let errorMessage = 'An error occurred during submission.';
-
                 try {
                     const errorData = await response.json();
-
-                    // Check if it's a duplicate email error
                     if (errorData.message && errorData.message.includes('email already exists')) {
-                        // For duplicate email, show success message since we want to allow multiple applications
                         setSubmissionStatus('success');
                         setFormData({
                             firstName: '',
@@ -128,7 +120,6 @@ function ApplicationForm() {
                         errorMessage = errorData.message || 'Server error during application submission.';
                     }
                 } catch (parseError) {
-                    // If response is not JSON, use status-based error message
                     if (response.status === 500) {
                         errorMessage = 'Internal server error. Please try again later.';
                     } else if (response.status === 404) {
@@ -137,14 +128,12 @@ function ApplicationForm() {
                         errorMessage = `Server error (${response.status}). Please try again.`;
                     }
                 }
-
                 setSubmissionStatus('error');
                 console.error('Submission failed:', errorMessage);
             }
         } catch (error) {
             setSubmissionStatus('error');
             console.error('Error submitting form:', error);
-            // Network error or other issues
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
                 console.error('Network error: Unable to connect to server');
             }
@@ -157,7 +146,7 @@ function ApplicationForm() {
                 <Typography variant="h2" component="h1" gutterBottom align="center" color="text.primary">
                     Application Form
                 </Typography>
-                <Typography variant="h5" paragraph align="center" color="text.secondary">
+                <Typography variant="h5" align="center" color="text.secondary">
                     Join the Lifewood team by applying for one of our exciting projects!
                 </Typography>
 
@@ -253,6 +242,7 @@ function ApplicationForm() {
                             value={formData.projectAppliedFor}
                             label="Project Applied For"
                             onChange={handleChange}
+                            variant="outlined"
                         >
                             <MenuItem value="">
                                 <em>Select a Project</em>

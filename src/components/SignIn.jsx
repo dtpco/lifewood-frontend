@@ -267,11 +267,11 @@ export default function SignIn() {
                             </Link>
                         </Box>
 
-                        <Divider sx={{ my: 3 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                OR
-                            </Typography>
-                        </Divider>
+                        {/*<Divider sx={{ my: 3 }}>*/}
+                        {/*    <Typography variant="body2" color="text.secondary">*/}
+                        {/*        OR*/}
+                        {/*    </Typography>*/}
+                        {/*</Divider>*/}
 
                         {/*<Box sx={{ textAlign: 'center' }}>*/}
                         {/*    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>*/}

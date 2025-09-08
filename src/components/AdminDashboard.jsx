@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -23,10 +23,14 @@ import {
     InputLabel,
     Alert,
     Chip,
+    Tooltip,
+    CircularProgress,
 } from '@mui/material';
 import { Edit, Delete, Close, Check } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const projects = [
     { id: 'ai-data-extraction', name: 'AI Data Extraction' },
@@ -48,6 +52,7 @@ function AdminDashboard() {
     const [openAcceptModal, setOpenAcceptModal] = useState(false);
     const [selectedApplication, setSelectedApplication] = useState(null);
     const [currentApplication, setCurrentApplication] = useState(null);
+
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -59,21 +64,13 @@ function AdminDashboard() {
     });
     const [formErrors, setFormErrors] = useState({});
     const [alert, setAlert] = useState({ type: '', message: '' });
+    const [acceptingId, setAcceptingId] = useState(null);
 
     const getToken = () => {
         return localStorage.getItem('token');
     };
 
-    useEffect(() => {
-        const token = getToken();
-        if (!token) {
-            navigate('/signin');
-        } else {
-            fetchApplications();
-        }
-    }, [navigate]);
-
-    const fetchApplications = async () => {
+    const fetchApplications = useCallback(async () => {
         const token = getToken();
         if (!token) {
             setAlert({ type: 'error', message: 'Authentication required. Please sign in.' });
@@ -82,15 +79,35 @@ function AdminDashboard() {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/applications', {
+            const response = await fetch(`${API_BASE}/api/applications`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
             });
 
             if (response.ok) {
-                const data = await response.json();
-                setApplications(data);
+                let data;
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    // Non-JSON fallback
+                    const text = await response.text();
+                    console.error('Unexpected non-JSON response for applications:', text);
+                    setAlert({ type: 'error', message: 'Unexpected response from server.' });
+                    return;
+                }
+
+                const list = Array.isArray(data)
+                    ? data
+                    : (data.applications || data.items || data.data || []);
+
+                // Optional: sort by createdAt desc if present
+                const sorted = Array.isArray(list)
+                    ? [...list].sort((a, b) => (new Date(b.createdAt || 0)) - (new Date(a.createdAt || 0)))
+                    : [];
+
+                setApplications(sorted);
             } else if (response.status === 401 || response.status === 403) {
                 setAlert({ type: 'error', message: 'Unauthorized access. Please sign in again.' });
                 localStorage.removeItem('token');
@@ -98,13 +115,22 @@ function AdminDashboard() {
                 navigate('/signin');
             } else {
                 setAlert({ type: 'error', message: 'Failed to fetch applications.' });
-                console.error('Failed to fetch applications');
+                console.error('Failed to fetch applications, status:', response.status);
             }
         } catch (error) {
             setAlert({ type: 'error', message: 'Error connecting to the server.' });
             console.error('Error fetching applications:', error);
         }
-    };
+    }, [navigate]);
+
+    useEffect(() => {
+        const token = getToken();
+        if (!token) {
+            navigate('/signin');
+        } else {
+            fetchApplications();
+        }
+    }, [fetchApplications, navigate]);
 
     const handleOpenEdit = (application) => {
         setCurrentApplication(application);
@@ -125,6 +151,7 @@ function AdminDashboard() {
             relevantExperience: '',
             email: '',
             projectAppliedFor: '',
+            status: 'pending',
         });
         setFormErrors({});
         setAlert({ type: '', message: '' });
@@ -168,23 +195,26 @@ function AdminDashboard() {
 
         try {
             let response;
+            const payload = { ...formData }; // Create a copy to potentially modify
             if (currentApplication) {
-                response = await fetch(`http://localhost:5000/api/applications/${currentApplication._id}`, {
+                response = await fetch(`${API_BASE}/api/applications/${currentApplication._id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`,
                     },
-                    body: JSON.stringify(formData),
+                    body: JSON.stringify(payload),
                 });
             } else {
-                response = await fetch('http://localhost:5000/api/applications', {
+                // Create new application - ensures a status is sent
+                payload.status = formData.status || 'pending'; // Ensure status is set
+                response = await fetch(`${API_BASE}/api/applications`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`,
                     },
-                    body: JSON.stringify(formData),
+                    body: JSON.stringify(payload),
                 });
             }
 
@@ -205,11 +235,12 @@ function AdminDashboard() {
         } catch (error) {
             setAlert({ type: 'error', message: 'Error submitting form.' });
             console.error('Error submitting form:', error);
+
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this application?')) {
+        if (!window.confirm('Are you sure you want to delete this application? This action cannot be undone.')) {
             return;
         }
 
@@ -221,7 +252,7 @@ function AdminDashboard() {
         }
 
         try {
-            const response = await fetch(`http://localhost:5000/api/applications/${id}`, {
+            const response = await fetch(`${API_BASE}/api/applications/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -244,6 +275,7 @@ function AdminDashboard() {
         } catch (error) {
             setAlert({ type: 'error', message: 'Error deleting application.' });
             console.error('Error deleting application:', error);
+
         }
     };
 
@@ -264,11 +296,13 @@ function AdminDashboard() {
         if (!token) {
             setAlert({ type: 'error', message: 'Authentication required. Please sign in.' });
             navigate('/signin');
+            handleCloseAcceptModal();
             return;
         }
 
+        setAcceptingId(selectedApplication._id);
         try {
-            const response = await fetch(`http://localhost:5000/api/applications/${selectedApplication._id}/accept`, {
+            const response = await fetch(`${API_BASE}/api/applications/${selectedApplication._id}/accept`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -282,7 +316,8 @@ function AdminDashboard() {
             });
 
             if (response.ok) {
-                setAlert({ type: 'success', message: 'Acceptance email sent successfully!' });
+                setAlert({ type: 'success', message: 'Acceptance email sent successfully! Application status updated!' });
+                fetchApplications();
                 setApplications(prevApps =>
                     prevApps.map(app =>
                         app._id === selectedApplication._id
@@ -296,17 +331,33 @@ function AdminDashboard() {
                 localStorage.removeItem('user');
                 navigate('/signin');
             } else {
-                const errorData = await response.json();
-                setAlert({ type: 'error', message: errorData.message || 'Failed to send acceptance email.' });
-                console.error('Failed to send acceptance email:', errorData);
+                let errorMsg = 'Failed to send acceptance email.';
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.message || errorData.error || JSON.stringify(errorData) || errorMsg;
+                    console.error('Failed to send acceptance email:', errorData);
+                } catch (jsonErr) {
+                    void jsonErr;
+                    try {
+                        const errorText = await response.text();
+                        errorMsg = errorText || `Server error (${response.status})`;
+                        console.error('Failed to send acceptance email (non-JSON):', errorText);
+                    } catch (textErr) {
+                        errorMsg = `Server error (${response.status}). Please check if the email service is configured correctly.`;
+                        console.error('Failed to parse error response:', textErr);
+                    }
+                }
+                setAlert({ type: 'error', message: errorMsg });
             }
         } catch (error) {
-            setAlert({ type: 'error', message: 'Error sending acceptance email.' });
-            console.error('Error sending acceptance email:', error);
+            setAlert({ type: 'error', message: 'Network error. Please check your connection and try again.' });
+            console.error('Network error sending acceptance email:', error);
         } finally {
+            setAcceptingId(null);
             handleCloseAcceptModal();
         }
     };
+
 
     const handleAccept = async (application) => {
         handleOpenAcceptModal(application);
@@ -318,9 +369,7 @@ function AdminDashboard() {
                 <Typography variant="h2" component="h1" gutterBottom align="center" color="text.primary">
                     Admin Dashboard
                 </Typography>
-                <Typography variant="h5" paragraph align="center" color="text.secondary">
-                    Manage all submitted applications efficiently.
-                </Typography>
+
 
                 {alert.message && (
                     <Alert severity={alert.type} sx={{ mb: 2 }}>
@@ -381,20 +430,37 @@ function AdminDashboard() {
                                             />
                                         </TableCell>
                                         <TableCell align="right">
-                                            <IconButton
-                                                color="success"
-                                                onClick={() => handleAccept(app)}
-                                                disabled={app.status === 'accepted'}
-                                                title="Accept Application"
-                                            >
-                                                <Check />
-                                            </IconButton>
-                                            <IconButton color="primary" onClick={() => handleOpenEdit(app)} title="Edit Application">
-                                                <Edit />
-                                            </IconButton>
-                                            <IconButton color="error" onClick={() => handleDelete(app._id)} title="Delete Application">
-                                                <Delete />
-                                            </IconButton>
+                                            <Tooltip title={app.status === 'accepted' ? 'Already accepted' : 'Accept Application'}>
+                                                <span>
+                                                    <IconButton
+                                                        color="success"
+                                                        onClick={() => handleAccept(app)}
+                                                        disabled={app.status === 'accepted' || acceptingId === app._id}
+                                                    >
+                                                        {acceptingId === app._id ? (
+                                                            <CircularProgress size={20} color="inherit" />
+                                                        ) : (
+                                                            <Check />
+                                                        )}
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                            <Tooltip title="Edit Application">
+                                                <IconButton
+                                                    color="primary"
+                                                    onClick={() => handleOpenEdit(app)}
+                                                >
+                                                    <Edit />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Delete Application">
+                                                <IconButton
+                                                    color="error"
+                                                    onClick={() => handleDelete(app._id)}
+                                                >
+                                                    <Delete />
+                                                </IconButton>
+                                            </Tooltip>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -454,7 +520,7 @@ function AdminDashboard() {
                                 helperText={formErrors.age}
                                 margin="normal"
                                 variant="outlined"
-                                inputProps={{ min: 0 }}
+                                slotProps={{ input: { min: 0 } }}
                             />
                             <TextField
                                 fullWidth
@@ -501,6 +567,7 @@ function AdminDashboard() {
                                     value={formData.projectAppliedFor}
                                     label="Project Applied For"
                                     onChange={handleChange}
+                                    variant="outlined"
                                 >
                                     <MenuItem value="">
                                         <em>Select a Project</em>
@@ -537,7 +604,7 @@ function AdminDashboard() {
                 {/* Accept Confirmation Modal */}
                 <Dialog
                     open={openAcceptModal}
-                    onClose={handleCloseAcceptModal}
+                    onClose={acceptingId ? undefined : handleCloseAcceptModal}
                     maxWidth="sm"
                     fullWidth
                 >
@@ -592,6 +659,7 @@ function AdminDashboard() {
                             onClick={handleCloseAcceptModal}
                             variant="outlined"
                             color="secondary"
+                            disabled={!!acceptingId}
                         >
                             Cancel
                         </Button>
@@ -599,10 +667,11 @@ function AdminDashboard() {
                             onClick={handleConfirmAccept}
                             variant="contained"
                             color="success"
-                            startIcon={<Check />}
+                            startIcon={acceptingId ? <CircularProgress size={18} color="inherit" /> : <Check />}
                             sx={{ color: 'white' }}
+                            disabled={!!acceptingId}
                         >
-                            Accept & Send Email
+                            {acceptingId ? 'Sending…' : 'Accept & Send Email'}
                         </Button>
                     </DialogActions>
                 </Dialog>
