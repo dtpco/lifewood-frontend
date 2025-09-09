@@ -30,7 +30,7 @@ import { Edit, Delete, Close, Check } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://lifewood-backend.onrender.com';
 
 const projects = [
     { id: 'ai-data-extraction', name: 'AI Data Extraction' },

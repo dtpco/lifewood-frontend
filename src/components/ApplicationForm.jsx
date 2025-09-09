@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://lifewood-backend.onrender.com';
 
 const projects = [
     { id: 'ai-data-extraction', name: 'AI Data Extraction' },
